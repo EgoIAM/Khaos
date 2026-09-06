@@ -1,0 +1,14 @@
+{
+  "name": "khaos",
+  "version": "0.1.0",
+  "description": "Khaos — un navigateur web de bureau, forgé dans le chaos.",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^31.0.0"
+  }
+}

@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Khaos</title>
+<link rel="stylesheet" href="assets/fonts/fonts.css">
+<style>
+  :root {
+    --void: #0c0a10;
+    --surface: #17131d;
+    --border: #2c2438;
+    --crack: #ff5a36;
+    --rift: #6e4bff;
+    --text: #ece7f5;
+    --text-dim: #8d84a3;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    min-height: 100%;
+    background: var(--void);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+  }
+  body {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    padding: 40px 20px;
+    overflow-x: hidden;
+  }
+
+  /* --- Fond d'écran --- */
+  #wallpaper {
+    position: fixed;
+    inset: 0;
+    background-size: cover;
+    background-position: center;
+    opacity: 0;
+    transition: opacity 0.8s ease;
+    z-index: 0;
+  }
+  body.has-wallpaper #wallpaper { opacity: 1; }
+  #wallpaper::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(12,10,16,0.7), rgba(12,10,16,0.82));
+  }
+
+  .cracks {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0.5;
+    z-index: 0;
+    transform-origin: 500px 350px;
+    animation: breathe 14s ease-in-out infinite;
+  }
+  @keyframes breathe {
+    0%, 100% { transform: scale(1) rotate(0deg); opacity: 0.45; }
+    50% { transform: scale(1.03) rotate(0.6deg); opacity: 0.6; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .cracks { animation: none; }
+  }
+
+  .center {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 26px;
+    width: min(560px, 92vw);
+    animation: rise 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  @keyframes rise {
+    from { opacity: 0; transform: translateY(14px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  h1 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700;
+    font-size: 40px;
+    letter-spacing: -0.01em;
+  }
+  h1 span { color: var(--crack); }
+
+  form {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    height: 48px;
+    padding: 0 18px;
+    background: rgba(23, 19, 29, 0.8);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+  form:focus-within {
+    border-color: var(--rift);
+    box-shadow: 0 0 0 4px rgba(110, 75, 255, 0.15);
+  }
+  input {
+    flex: 1;
+    height: 100%;
+    border: none;
+    outline: none;
+    background: transparent;
+    color: var(--text);
+    font-size: 15px;
+    font-family: 'Inter', sans-serif;
+  }
+  input::placeholder { color: var(--text-dim); }
+
+  .tagline {
+    color: var(--text-dim);
+    font-size: 13px;
+    letter-spacing: 0.02em;
+  }
+
+  /* --- Raccourcis --- */
+  .shortcuts {
+    display: flex;
+    justify-content: center;
+    gap: 14px;
+    flex-wrap: wrap;
+    width: 100%;
+  }
+  .shortcut {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    width: 92px;
+    padding: 14px 6px 10px;
+    border-radius: 12px;
+    cursor: pointer;
+    background: rgba(23, 19, 29, 0.5);
+    border: 1px solid transparent;
+    transition: transform 0.18s cubic-bezier(0.16, 1, 0.3, 1), background 0.18s ease, border-color 0.18s ease;
+  }
+  .shortcut:hover {
+    transform: translateY(-4px);
+    background: rgba(33, 26, 44, 0.85);
+    border-color: var(--border);
+  }
+  .shortcut:active { transform: translateY(-1px) scale(0.97); }
+
+  .shortcut-badge {
+    width: 40px;
+    height: 40px;
+    border-radius: 11px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700;
+    font-size: 13px;
+    color: #0c0a10;
+  }
+  .shortcut-label {
+    font-size: 11.5px;
+    color: var(--text-dim);
+    text-align: center;
+    line-height: 1.25;
+  }
+  .shortcut:hover .shortcut-label { color: var(--text); }
+
+  .shortcut-edit {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 18px;
+    height: 18px;
+    border-radius: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(12,10,16,0.7);
+    color: var(--text-dim);
+    opacity: 0;
+    transition: opacity 0.15s ease;
+  }
+  .shortcut:hover .shortcut-edit { opacity: 1; }
+  .shortcut-edit:hover { color: var(--text); }
+
+  /* --- Bouton fond d'écran --- */
+  .wallpaper-actions {
+    display: flex;
+    gap: 14px;
+    align-items: center;
+  }
+  .wallpaper-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: transparent;
+    border: none;
+    color: var(--text-dim);
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    cursor: pointer;
+    padding: 4px 2px;
+    transition: color 0.15s ease;
+  }
+  .wallpaper-btn:hover { color: var(--text); }
+</style>
+</head>
+<body>
+  <div id="wallpaper"></div>
+
+  <svg class="cracks" viewBox="0 0 1000 700" preserveAspectRatio="xMidYMid slice">
+    <g stroke="#6e4bff" stroke-width="1" fill="none" opacity="0.35">
+      <path d="M500 350 L120 90"/>
+      <path d="M500 350 L860 60"/>
+      <path d="M500 350 L60 480"/>
+      <path d="M500 350 L940 520"/>
+      <path d="M500 350 L470 700"/>
+    </g>
+    <g stroke="#ff5a36" stroke-width="1" fill="none" opacity="0.25">
+      <path d="M500 350 L300 20"/>
+      <path d="M500 350 L980 260"/>
+      <path d="M500 350 L40 190"/>
+    </g>
+  </svg>
+
+  <div class="center">
+    <h1>KHA<span>O</span>S</h1>
+
+    <form id="search-form">
+      <input id="search-input" type="text" placeholder="Rechercher ou entrer une adresse…" autofocus>
+    </form>
+
+    <div class="shortcuts" id="shortcuts"></div>
+
+    <div class="wallpaper-actions">
+      <button class="wallpaper-btn" id="wallpaper-choose">
+        <svg width="13" height="13" viewBox="0 0 16 16"><path d="M2 12l3.5-4.5 2.5 3 3-4L14 12" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><rect x="1.5" y="2.5" width="13" height="11" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.4"/></svg>
+        Fond d'écran
+      </button>
+      <button class="wallpaper-btn" id="wallpaper-clear" style="display:none;">Réinitialiser</button>
+    </div>
+
+    <div class="tagline">un point d'ordre, au milieu du bruit</div>
+  </div>
+
+  <script>
+    const form = document.getElementById('search-form');
+    const input = document.getElementById('search-input');
+
+    function resolve(raw) {
+      const value = raw.trim();
+      if (!value) return null;
+      const looksLikeUrl = /^https?:\/\//i.test(value) ||
+        (/^[\w.-]+\.[a-z]{2,}(\/.*)?$/i.test(value) && !value.includes(' '));
+      if (looksLikeUrl) {
+        return /^https?:\/\//i.test(value) ? value : 'https://' + value;
+      }
+      return 'https://duckduckgo.com/?q=' + encodeURIComponent(value);
+    }
+
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const url = resolve(input.value);
+      if (url) window.location.href = url;
+    });
+
+    // --- Raccourcis scolaires ---
+    const DEFAULT_SHORTCUTS = [
+      {
+        id: 'educonnect',
+        label: 'EduConnect',
+        color: '#6e4bff',
+        initials: 'ÉC',
+        url: 'https://educonnect.education.gouv.fr/',
+        editable: false
+      },
+      {
+        id: 'lyceeconnecte',
+        label: 'Lycée Connecté',
+        color: '#ff5a36',
+        initials: 'LC',
+        url: 'https://lyceeconnecte.fr/',
+        editable: false
+      },
+      {
+        id: 'pronote',
+        label: 'Pronote',
+        color: '#e8e4ee',
+        initials: 'PR',
+        // Pronote n'a pas d'adresse unique : chaque établissement a la sienne.
+        // On pointe par défaut vers la page officielle qui explique comment la trouver,
+        // et l'utilisateur peut renseigner l'adresse exacte de son établissement (clic sur le crayon).
+        url: 'https://www.index-education.com/fr/pronote-parents-eleves.php',
+        editable: true
+      }
+    ];
+
+    function loadShortcutUrl(shortcut) {
+      return localStorage.getItem('khaos:shortcut:' + shortcut.id) || shortcut.url;
+    }
+
+    function renderShortcuts() {
+      const wrap = document.getElementById('shortcuts');
+      wrap.innerHTML = '';
+      DEFAULT_SHORTCUTS.forEach((s) => {
+        const el = document.createElement('div');
+        el.className = 'shortcut';
+        el.innerHTML = `
+          <div class="shortcut-badge" style="background:${s.color}">${s.initials}</div>
+          <div class="shortcut-label">${s.label}</div>
+          ${s.editable ? `<div class="shortcut-edit" title="Renseigner l'adresse de mon établissement">
+            <svg width="10" height="10" viewBox="0 0 16 16"><path d="M11 2l3 3-8 8-3.5 1 1-3.5z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>
+          </div>` : ''}
+        `;
+        el.addEventListener('click', (e) => {
+          if (e.target.closest('.shortcut-edit')) return;
+          window.location.href = loadShortcutUrl(s);
+        });
+        const editBtn = el.querySelector('.shortcut-edit');
+        if (editBtn) {
+          editBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const current = loadShortcutUrl(s);
+            const next = prompt(
+              "Adresse de Pronote pour ton établissement (donnée par ton collège/lycée) :",
+              current === s.url ? 'https://' : current
+            );
+            if (next && next.trim()) {
+              localStorage.setItem('khaos:shortcut:' + s.id, next.trim());
+            }
+          });
+        }
+        wrap.appendChild(el);
+      });
+    }
+    renderShortcuts();
+
+    // --- Fond d'écran ---
+    function applyWallpaper(url) {
+      const layer = document.getElementById('wallpaper');
+      const clearBtn = document.getElementById('wallpaper-clear');
+      if (url) {
+        layer.style.backgroundImage = `url("${url}")`;
+        document.body.classList.add('has-wallpaper');
+        clearBtn.style.display = '';
+      } else {
+        document.body.classList.remove('has-wallpaper');
+        layer.style.backgroundImage = '';
+        clearBtn.style.display = 'none';
+      }
+    }
+
+    if (window.khaosWallpaper) {
+      window.khaosWallpaper.get().then(applyWallpaper);
+
+      document.getElementById('wallpaper-choose').addEventListener('click', async () => {
+        const url = await window.khaosWallpaper.choose();
+        if (url) applyWallpaper(url);
+      });
+
+      document.getElementById('wallpaper-clear').addEventListener('click', async () => {
+        await window.khaosWallpaper.clear();
+        applyWallpaper(null);
+      });
+    } else {
+      document.querySelector('.wallpaper-actions').style.display = 'none';
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline'; font-src 'self'; style-src 'self' 'unsafe-inline';">
+<title>Khaos</title>
+<link rel="stylesheet" href="assets/fonts/fonts.css">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <div id="wallpaper-layer"></div>
+
+  <div id="titlebar">
+    <div id="tabstrip">
+      <div id="tabs"></div>
+      <button id="new-tab-btn" title="Nouvel onglet">
+        <svg viewBox="0 0 16 16" width="14" height="14"><path d="M8 2v12M2 8h12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+    <div id="window-controls">
+      <button id="min-btn" class="win-btn" title="Réduire">
+        <svg viewBox="0 0 10 10" width="10" height="10"><path d="M1 5h8" stroke="currentColor" stroke-width="1.2"/></svg>
+      </button>
+      <button id="max-btn" class="win-btn" title="Agrandir">
+        <svg viewBox="0 0 10 10" width="10" height="10"><rect x="1.5" y="1.5" width="7" height="7" fill="none" stroke="currentColor" stroke-width="1.2"/></svg>
+      </button>
+      <button id="close-btn" class="win-btn close" title="Fermer">
+        <svg viewBox="0 0 10 10" width="10" height="10"><path d="M1 1l8 8M9 1l-8 8" stroke="currentColor" stroke-width="1.2"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <div id="toolbar">
+    <div id="nav-buttons">
+      <button id="back-btn" class="nav-btn" title="Précédent" disabled>
+        <svg viewBox="0 0 16 16" width="16" height="16"><path d="M10 3L5 8l5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <button id="forward-btn" class="nav-btn" title="Suivant" disabled>
+        <svg viewBox="0 0 16 16" width="16" height="16"><path d="M6 3l5 5-5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <button id="reload-btn" class="nav-btn" title="Recharger">
+        <svg viewBox="0 0 16 16" width="16" height="16"><path d="M13 8a5 5 0 1 1-1.6-3.7M13 2.5V6h-3.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <button id="home-btn" class="nav-btn" title="Accueil">
+        <svg viewBox="0 0 16 16" width="16" height="16"><path d="M2 7.5L8 2l6 5.5M4 6.5V14h8V6.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </div>
+
+    <div id="address-bar">
+      <span id="security-icon">◇</span>
+      <input id="url-input" type="text" spellcheck="false" placeholder="Rechercher ou entrer une adresse…">
+    </div>
+
+    <div id="right-actions">
+      <div id="menu-wrap">
+        <button id="menu-btn" class="nav-btn" title="Menu">
+          <svg viewBox="0 0 16 16" width="16" height="16"><circle cx="8" cy="3" r="1.3" fill="currentColor"/><circle cx="8" cy="8" r="1.3" fill="currentColor"/><circle cx="8" cy="13" r="1.3" fill="currentColor"/></svg>
+        </button>
+        <div id="menu-dropdown">
+          <button id="menu-wallpaper-choose">Changer le fond d'écran…</button>
+          <button id="menu-wallpaper-clear">Réinitialiser le fond d'écran</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="progress-bar"></div>
+
+  <div id="webviews"></div>
+
+  <template id="tab-template">
+    <div class="tab">
+      <span class="tab-favicon"></span>
+      <span class="tab-title">Nouvel onglet</span>
+      <button class="tab-close" title="Fermer l'onglet">
+        <svg viewBox="0 0 10 10" width="9" height="9"><path d="M1 1l8 8M9 1l-8 8" stroke="currentColor" stroke-width="1.3"/></svg>
+      </button>
+    </div>
+  </template>
+
+  <script src="renderer.js"></script>
+</body>
+</html>
