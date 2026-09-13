@@ -45,7 +45,7 @@
     content: '';
     position: absolute;
     inset: 0;
-    background: linear-gradient(180deg, rgba(12,10,16,0.7), rgba(12,10,16,0.82));
+    background: linear-gradient(180deg, rgba(12,10,16,0.12) 0%, rgba(12,10,16,0.18) 55%, rgba(12,10,16,0.4) 100%);
   }
 
   .cracks {
@@ -86,6 +86,7 @@
     font-weight: 700;
     font-size: 40px;
     letter-spacing: -0.01em;
+    text-shadow: 0 2px 20px rgba(0,0,0,0.5);
   }
   h1 span { color: var(--crack); }
 
@@ -96,11 +97,15 @@
     gap: 10px;
     height: 48px;
     padding: 0 18px;
-    background: rgba(23, 19, 29, 0.8);
-    border: 1px solid var(--border);
+    background: rgba(23, 19, 29, 0.4);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255,255,255,0.12);
     border-radius: 12px;
-    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.25);
   }
+  body:not(.has-wallpaper) form { background: rgba(23, 19, 29, 0.8); }
   form:focus-within {
     border-color: var(--rift);
     box-shadow: 0 0 0 4px rgba(110, 75, 255, 0.15);
@@ -121,6 +126,7 @@
     color: var(--text-dim);
     font-size: 13px;
     letter-spacing: 0.02em;
+    text-shadow: 0 1px 8px rgba(0,0,0,0.6);
   }
 
   /* --- Raccourcis --- */
@@ -141,8 +147,10 @@
     padding: 14px 6px 10px;
     border-radius: 12px;
     cursor: pointer;
-    background: rgba(23, 19, 29, 0.5);
-    border: 1px solid transparent;
+    background: rgba(23, 19, 29, 0.28);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255,255,255,0.08);
     transition: transform 0.18s cubic-bezier(0.16, 1, 0.3, 1), background 0.18s ease, border-color 0.18s ease;
   }
   .shortcut:hover {
@@ -257,11 +265,9 @@
     function resolve(raw) {
       const value = raw.trim();
       if (!value) return null;
-      const looksLikeUrl = /^https?:\/\//i.test(value) ||
-        (/^[\w.-]+\.[a-z]{2,}(\/.*)?$/i.test(value) && !value.includes(' '));
-      if (looksLikeUrl) {
-        return /^https?:\/\//i.test(value) ? value : 'https://' + value;
-      }
+      if (/^[a-z][a-z0-9+.-]*:\/\//i.test(value)) return value;
+      const looksLikeUrl = /^[\w.-]+\.[a-z]{2,}(\/.*)?$/i.test(value) && !value.includes(' ');
+      if (looksLikeUrl) return 'https://' + value;
       return 'https://duckduckgo.com/?q=' + encodeURIComponent(value);
     }
 
@@ -359,6 +365,7 @@
 
     if (window.khaosWallpaper) {
       window.khaosWallpaper.get().then(applyWallpaper);
+      window.khaosWallpaper.onChange(applyWallpaper);
 
       document.getElementById('wallpaper-choose').addEventListener('click', async () => {
         const url = await window.khaosWallpaper.choose();
