@@ -19,6 +19,7 @@ const menuNewIncognito = document.getElementById('menu-new-incognito');
 const menuHistory = document.getElementById('menu-history');
 const menuToggleBookmarksBar = document.getElementById('menu-toggle-bookmarks-bar');
 const menuToggleBlocking = document.getElementById('menu-toggle-blocking');
+const menuToggleFingerprint = document.getElementById('menu-toggle-fingerprint');
 const bookmarksBar = document.getElementById('bookmarks-bar');
 const zoomIndicator = document.getElementById('zoom-indicator');
 const incognitoBadge = document.getElementById('incognito-badge');
@@ -424,6 +425,17 @@ menuToggleBlocking.addEventListener('click', async () => {
   syncBlockingLabel(enabled);
 });
 
+// --- Anti-fingerprinting ---
+function syncFingerprintLabel(enabled) {
+  menuToggleFingerprint.textContent = 'Anti-fingerprinting : ' + (enabled ? 'activé' : 'désactivé');
+}
+window.khaos.fingerprint.get().then(syncFingerprintLabel);
+menuToggleFingerprint.addEventListener('click', async () => {
+  menuDropdown.classList.remove('open');
+  const enabled = await window.khaos.fingerprint.toggle();
+  syncFingerprintLabel(enabled);
+});
+
 // --- Téléchargements ---
 function formatBytes(n) {
   if (!n) return '0 Ko';
@@ -523,6 +535,7 @@ const PALETTE_ACTIONS = [
   { label: 'Nouvelle fenêtre privée', hint: 'Ctrl+Shift+N', run: () => window.khaos.newIncognitoWindow() },
   { label: 'Ouvrir l\'historique', hint: 'Ctrl+H', run: () => createTab('history.html') },
   { label: 'Basculer le bloqueur de traqueurs', run: () => menuToggleBlocking.click() },
+  { label: 'Basculer l\'anti-fingerprinting', run: () => menuToggleFingerprint.click() },
   { label: 'Changer le fond d\'écran…', run: () => menuWallpaperChoose.click() },
   { label: 'Mode lecture sur cet onglet', run: () => readerBtn.click() },
   { label: 'Aller à l\'accueil', hint: 'Ctrl+Shift+H', run: () => { if (activeTab()) activeTab().webview.src = 'home.html'; } }

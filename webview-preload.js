@@ -23,6 +23,88 @@ if (isOwnHistoryPage) {
   });
 }
 
+// Ce preload s'exécute avant même que <html> existe (document-start) : il
+// faut attendre sa création — via MutationObserver sur `document` lui-même,
+// qui fonctionne déjà avant que documentElement existe — pour pouvoir y
+// insérer quoi que ce soit, sinon toute tentative plante silencieusement.
+function whenDocumentElementReady(cb) {
+  if (document.documentElement) { cb(); return; }
+  const observer = new MutationObserver(() => {
+    if (document.documentElement) {
+      observer.disconnect();
+      cb();
+    }
+  });
+  observer.observe(document, { childList: true });
+}
+
+// --- Anti-fingerprinting ---
+// Vérification synchrone (quasi instantanée) : le patch doit être en place
+// avant le premier script de la page, sans quoi un script de fingerprinting
+// qui lirait le canvas ou le GPU une fraction de seconde trop tôt le
+// contournerait entièrement.
+if (ipcRenderer.sendSync('fingerprint:get-sync')) {
+  whenDocumentElementReady(injectFingerprintPatch);
+}
+
+function injectFingerprintPatch() {
+  const script = document.createElement('script');
+  script.textContent = `(() => {
+    try {
+      // Bruit de canvas : chaque lecture renvoie des pixels très légèrement
+      // altérés, assez pour casser un hash de fingerprint, invisible à l'œil.
+      const jitter = (v) => Math.min(255, Math.max(0, v + (Math.random() < 0.5 ? -1 : 1)));
+      const origGetImageData = CanvasRenderingContext2D.prototype.getImageData;
+      CanvasRenderingContext2D.prototype.getImageData = function (...args) {
+        const data = origGetImageData.apply(this, args);
+        for (let i = 0; i < data.data.length; i += 4) data.data[i] = jitter(data.data[i]);
+        return data;
+      };
+      const origToDataURL = HTMLCanvasElement.prototype.toDataURL;
+      HTMLCanvasElement.prototype.toDataURL = function (...args) {
+        const ctx = this.getContext('2d');
+        if (ctx) {
+          try {
+            const data = ctx.getImageData(0, 0, this.width, this.height);
+            ctx.putImageData(data, 0, 0);
+          } catch (e) {}
+        }
+        return origToDataURL.apply(this, args);
+      };
+
+      // WebGL : masque le vrai modèle de GPU (fingerprint très fort sinon)
+      const spoofGL = (proto) => {
+        const orig = proto.getParameter;
+        proto.getParameter = function (param) {
+          if (param === 37445) return 'Google Inc. (Generic)';
+          if (param === 37446) return 'ANGLE (Generic, Generic Renderer, OpenGL)';
+          return orig.call(this, param);
+        };
+      };
+      if (window.WebGLRenderingContext) spoofGL(WebGLRenderingContext.prototype);
+      if (window.WebGL2RenderingContext) spoofGL(WebGL2RenderingContext.prototype);
+
+      // AudioContext : bruit inaudible mais suffisant pour casser le hash
+      if (window.AudioBuffer) {
+        const origGetChannelData = AudioBuffer.prototype.getChannelData;
+        AudioBuffer.prototype.getChannelData = function (...args) {
+          const data = origGetChannelData.apply(this, args);
+          for (let i = 0; i < data.length; i += 100) data[i] += (Math.random() - 0.5) * 1e-7;
+          return data;
+        };
+      }
+
+      // Signaux matériels normalisés (au lieu des vraies specs de la machine)
+      Object.defineProperty(navigator, 'hardwareConcurrency', { get: () => 8, configurable: true });
+      if ('deviceMemory' in navigator) {
+        Object.defineProperty(navigator, 'deviceMemory', { get: () => 8, configurable: true });
+      }
+    } catch (e) {}
+  })();`;
+  (document.head || document.documentElement).prepend(script);
+  script.remove();
+}
+
 // --- Blocage des publicités YouTube (masquage + saut automatique) ---
 // Le blocage réseau (main.js) coupe les appels de métadonnées publicitaires,
 // mais les vidéos-pub elles-mêmes transitent par le même CDN que le contenu
@@ -30,10 +112,8 @@ if (isOwnHistoryPage) {
 // laisse donc charger et on les saute/masque automatiquement côté page.
 const isYouTube = /(^|\.)youtube\.com$/.test(location.hostname);
 
-if (isYouTube) {
-  ipcRenderer.invoke('blocking:get').then((enabled) => {
-    if (enabled) injectYoutubeAdBlock();
-  });
+if (isYouTube && ipcRenderer.sendSync('blocking:get-sync')) {
+  whenDocumentElementReady(injectYoutubeAdBlock);
 }
 
 function injectYoutubeAdBlock() {

@@ -35,6 +35,14 @@ La première installation télécharge Electron (~100-200 Mo), donc elle peut pr
   - **Publicités YouTube** : les bannières et pavés publicitaires sont masqués, et les pubs vidéo sont sautées automatiquement (clic sur "Passer" dès qu'il apparaît) ou avancées instantanément jusqu'à la fin si elles ne sont pas "skippables". Limite honnête : YouTube sert ses pubs vidéo par le même réseau que le contenu normal, donc il est impossible de les bloquer par simple filtrage réseau sans casser la lecture — c'est pour ça que Khaos les laisse charger une fraction de seconde puis les saute/masque, plutôt que de les empêcher totalement. Recharge la page après avoir activé/désactivé le bloqueur pour que le changement s'applique à YouTube.
 - **Téléchargements** : icône dédiée dans la barre d'outils avec badge de progression, panneau listant les fichiers avec "Ouvrir" / "Afficher dans le dossier"
 - **Mode lecture** : icône livre dans la barre d'outils, extrait le contenu principal d'un article et l'affiche en typographie propre, sans distractions (`Échap` pour fermer)
+- **Anti-fingerprinting**, activable/désactivable depuis le menu ⋮ (activé par défaut) :
+  - User-Agent nettoyé de toute trace "Electron", en-têtes Sec-CH-UA supprimés
+  - Bruit ajouté aux lectures de canvas (casse le fingerprint canvas classique)
+  - Modèle de GPU réel masqué en WebGL (remplacé par une valeur générique)
+  - Bruit inaudible ajouté à l'AudioContext (casse le fingerprint audio)
+  - `hardwareConcurrency` et `deviceMemory` normalisés à des valeurs communes
+  - Fuite d'adresse IP locale via WebRTC bloquée
+  - Recharge la page après avoir basculé le réglage pour qu'il s'applique
 - Raccourcis clavier : `Ctrl/Cmd+K` (palette de commandes), `Ctrl/Cmd+T` (nouvel onglet), `Ctrl/Cmd+W` (fermer l'onglet), `Ctrl/Cmd+L` (focus barre d'adresse), `Ctrl/Cmd+R` (recharger), `Ctrl/Cmd+D` (favori), `Ctrl/Cmd+H` (historique), `Ctrl/Cmd+Shift+N` (fenêtre privée)
 - Fenêtre sans bordure avec contrôles personnalisés (réduire / agrandir / fermer)
 

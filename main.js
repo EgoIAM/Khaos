@@ -3,9 +3,14 @@ const path = require('path');
 const fs = require('fs');
 const crypto = require('crypto');
 
+// Doit être appelé avant app.whenReady() : évite que WebRTC ne révèle
+// l'adresse IP locale (réseau domestique) aux sites visités.
+app.commandLine.appendSwitch('force-webrtc-ip-handling-policy', 'default_public_interface_only');
+
 const windows = new Set();
 const preparedPartitions = new Set();
 const downloadsByPartition = new Map(); // partition -> [{id, filename, receivedBytes, totalBytes, state, savePath}]
+let DEFAULT_UA = '';
 
 // --- Blocage de traqueurs/publicités (liste courte, non exhaustive) ---
 const TRACKER_DOMAINS = [
@@ -26,6 +31,28 @@ const YOUTUBE_AD_PATTERNS = [
   'youtube.com/api/stats/qoe', 'doubleclick.net', 'googlesyndication.com',
   '/get_midroll_info', 'video-ad-stats'
 ];
+
+// --- Anti-fingerprinting ---
+function buildCleanUA() {
+  const chromeVersion = process.versions.chrome;
+  if (process.platform === 'win32') {
+    return `Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/${chromeVersion} Safari/537.36`;
+  }
+  if (process.platform === 'darwin') {
+    return `Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/${chromeVersion} Safari/537.36`;
+  }
+  return `Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/${chromeVersion} Safari/537.36`;
+}
+const CLEAN_UA = buildCleanUA();
+
+function isFingerprintProtectionEnabled() {
+  const settings = readJson('settings.json', {});
+  return settings.fingerprintProtection !== false; // activé par défaut
+}
+
+function applyFingerprintProtection(sess) {
+  sess.setUserAgent(isFingerprintProtectionEnabled() ? CLEAN_UA : DEFAULT_UA);
+}
 
 // --- Stockage JSON simple (userData) ---
 function dataPath(name) {
@@ -76,11 +103,24 @@ function prepareSession(partition) {
 
   const sess = session.fromPartition(partition);
 
+  applyFingerprintProtection(sess);
+
   sess.webRequest.onBeforeRequest({ urls: ['<all_urls>'] }, (details, callback) => {
     const blocked = isBlockingEnabled() &&
       (TRACKER_DOMAINS.some((d) => details.url.includes(d)) ||
        YOUTUBE_AD_PATTERNS.some((p) => details.url.includes(p)));
     callback({ cancel: blocked });
+  });
+
+  // Les en-têtes Sec-CH-UA-* révèlent précisément le moteur Chromium/Electron
+  // sous-jacent ; on les retire quand la protection est active.
+  sess.webRequest.onBeforeSendHeaders({ urls: ['<all_urls>'] }, (details, callback) => {
+    if (isFingerprintProtectionEnabled()) {
+      for (const key of Object.keys(details.requestHeaders)) {
+        if (/^sec-ch-ua/i.test(key)) delete details.requestHeaders[key];
+      }
+    }
+    callback({ requestHeaders: details.requestHeaders });
   });
 
   sess.on('will-download', (_event, item) => {
@@ -155,6 +195,8 @@ function createWindow({ incognito = false } = {}) {
 }
 
 app.whenReady().then(() => {
+  DEFAULT_UA = session.defaultSession.getUserAgent();
+
   // Bloque les permissions intrusives par défaut (notifications, géoloc, etc.)
   session.defaultSession.setPermissionRequestHandler((webContents, permission, callback) => {
     const allowed = ['clipboard-read', 'fullscreen'];
@@ -267,6 +309,22 @@ ipcMain.handle('blocking:toggle', () => {
   writeJson('settings.json', settings);
   return settings.blockingEnabled;
 });
+// Version synchrone : utilisée par le script injecté avant même le premier
+// rendu de la page, pour éviter toute fenêtre de course avec les scripts du site.
+ipcMain.on('blocking:get-sync', (e) => { e.returnValue = isBlockingEnabled(); });
+
+// --- Anti-fingerprinting ---
+ipcMain.handle('fingerprint:get', () => isFingerprintProtectionEnabled());
+ipcMain.handle('fingerprint:toggle', () => {
+  const settings = readJson('settings.json', {});
+  settings.fingerprintProtection = !isFingerprintProtectionEnabled();
+  writeJson('settings.json', settings);
+  for (const partition of preparedPartitions) {
+    applyFingerprintProtection(session.fromPartition(partition));
+  }
+  return settings.fingerprintProtection;
+});
+ipcMain.on('fingerprint:get-sync', (e) => { e.returnValue = isFingerprintProtectionEnabled(); });
 
 // --- Téléchargements ---
 ipcMain.handle('downloads:list', (e) => {

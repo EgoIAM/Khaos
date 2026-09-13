@@ -38,6 +38,11 @@ contextBridge.exposeInMainWorld('khaos', {
     toggle: () => ipcRenderer.invoke('blocking:toggle')
   },
 
+  fingerprint: {
+    get: () => ipcRenderer.invoke('fingerprint:get'),
+    toggle: () => ipcRenderer.invoke('fingerprint:toggle')
+  },
+
   downloads: {
     list: () => ipcRenderer.invoke('downloads:list'),
     openFile: (savePath) => ipcRenderer.invoke('downloads:openFile', savePath),
